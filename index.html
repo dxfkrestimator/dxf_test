@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DXF Estimator</title>
+    <link href="https://fonts.cdnfonts.com/css/switzer" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/poppins" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://oahdev.github.io/dxf_viewer/dxf-parser.js"></script>
+    <!-- <script src="https://oahdev.github.io/dxf_viewer/jquery.js"></script> -->
+    <script src="https://oahdev.github.io/dxf_viewer/three.js"></script>
+    <script src="https://oahdev.github.io/dxf_viewer/OrbitControls.js"></script>
+    <script src="https://oahdev.github.io/dxf_viewer/three-dxf.js"></script>
+</head>
+<style>
+    body{
+        background-color: var(--bs-dark-bg-subtle);
+        font-family: poppins;
+        overflow: hidden;
+    }
+
+    #models,
+    #overview,
+    #uploadForm
+    {
+        background-color: var(--bs-body-bg);
+        height: fit-content;
+    }
+    #cards , #models_pricing{
+        max-height: 81vh;
+        /* overflow-y: scroll; */
+        scroll-behavior: smooth;
+        scrollbar-width: thin;
+    }
+    #models_pricing{
+        max-height: 50vh;
+    }
+
+    #model_img{
+        width: 120px;
+        height: 120px;
+    }
+    #model_dxf_img{
+        display: none;
+    }
+
+    #model_qty_count{
+        display: flex;
+        width: fit-content;
+        border: 1px solid rgb(193, 202, 209);
+        -webkit-box-align: center;
+        align-items: center;
+        color: rgb(9, 44, 71);
+        height: fit-content;
+    }
+    .model_qty_count_btn{
+        outline: 0px;
+        cursor: pointer;
+        font-family: "Open Sans";
+        padding: 2px 4px;
+        appearance: none;
+        box-shadow: none;
+        color: rgb(9, 44, 71);
+        width: 27px;
+        height: 22px;
+        border: none;
+        border-radius: 0px;
+        font-size: 9px;
+        line-height: 14px;
+        font-weight: 200;
+        background-color: transparent;
+    }
+    .model_qty_count_btn:hover{
+        color: rgb(9, 44, 71);
+        border-color: rgb(132, 149, 163);
+        background-color: rgb(245, 247, 248);
+    }
+    #model_qty_count_number {
+        width: 32px;
+        min-width: 28px;
+        transition: width 0.5s ease 0s;
+        height: 22px;
+        padding: 0px;
+        border-top: none;
+        border-bottom: none;
+        border-image: initial;
+        border-left: 1px solid rgb(193, 202, 209);
+        border-right: 1px solid rgb(193, 202, 209);
+        background-color: transparent;
+        font-size: 11px;
+        line-height: 27px;
+        text-align: center;
+    }
+    #remove_model_btn{
+        font-size:14px; 
+        cursor: pointer; 
+        color:var(--bs-danger);
+    }
+
+    .model_div div , #model_price_div{
+        display: flex;
+        gap: .5rem;
+        font-size: 14px;
+        align-items: center;
+        margin-bottom: .5rem;
+    }
+    #model_price_div span{
+        font-size: 12px;
+    }
+    .model_div p{
+        font-weight: 300;
+        margin: 0;
+    }
+    .model_div select{
+        font-weight: 300;
+        padding: 4px 14px;
+        border-radius: 3px;
+        outline: none;
+        border: 1px solid rgb(193, 202, 209);
+    }
+
+    #model_overview_name{
+        font-size: 16px;
+        font-weight: bold;
+    }
+</style>
+<body>
+    <form method="POST" id="uploadForm" class="w-50 m-auto p-5 text-center rounded" style="margin-top: 9rem !important;">
+        <label for="fileInput" class="mb-3 btn btn-outline-success">
+            <div class="p-5">
+                <i class="bi bi-cloud-upload fs-1"></i>
+                <h2>Select Files</h2>
+                <p>upload only `.dxf` files</p>
+            </div>
+        </label>
+        <input type="file" id="fileInput" class="mb-3" name="files" accept=".dxf" multiple hidden/>
+        <div class="spinner-grow spinner-grow-sm text-success" role="status" style="width:9rem;height:9rem;display:none;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </form>
+    <div class="container mt-5 d-flex gap-4 p-0">
+        
+    </div>
+</body>
+<script>
+        function add_scroll(){
+            if($("#cards").css("height").split("px")[0] > 530){
+                $("#cards").css("overflow-y","scroll");
+            }
+            if($("#models_pricing").css("height").split("px")[0] > 330){
+                $("#models_pricing").css("overflow-y","scroll");
+            }
+        }
+
+        // $("#model_material , #model_thickness").change(function(){
+        //     $("#estimate_models_btn").show();
+        // })
+        $(document).on("change","#model_material , #model_thickness, #model_qty_count_number",function () { 
+            $("#estimate_models_btn").show();
+        })
+
+
+        //function to preview image
+        function preview_dxf(dxf_data){
+            dxf_data.map((dxf)=> {
+                var font;
+                var dxf_result = dxf.dxfdata;
+                var loader = new THREE.FontLoader();
+                var doc = 'model_dxf_img_'+dxf.filePath;
+                document.getElementById(doc).style.display = 'block';
+                $('#cards figure[data-model-id="'+dxf.filePath+'"] #model_img').hide();
+                loader.load( 'https://oahdev.github.io/dxf_viewer/helvetiker_regular.typeface.json', function ( response ) {
+                    font = response;
+                    cadCanvas = new ThreeDxf.Viewer(dxf_result, document.getElementById(doc), 120, 120, font);
+                });
+            })
+        }
+
+
+        $("#uploadForm").change(function(event) {
+            event.preventDefault()
+    
+            const fileInput = document.getElementById('fileInput');
+            var formData = new FormData();
+    
+            for (var i = 0; i < fileInput.files.length; i++) {
+                formData.append('files', fileInput.files[i]); 
+            }
+    
+            $.ajax({
+                type: "POST",
+                url: "https://dxf-estimator.onrender.com/upload",
+                // url: "http://127.0.0.1:8000/upload",
+                data: formData,
+                contentType: false,
+                processData: false,
+                beforeSend: function(){
+                    $("#uploadForm label").hide();
+                    $(".spinner-grow").show();
+                },
+                success: function (response) {
+                    $("#uploadForm").hide();
+                    $('.container').html(response['data']);
+                    // console.log($("#cards").css("height") +'<brbrb>'+ $("#models_pricing").css("height"));
+                    add_scroll();
+                    console.log(response['dxf_data']);
+                    preview_dxf(response['dxf_data']);
+                }
+            });
+        });
+        
+
+
+
+        //function to increase and decrease model qty
+        function incr_decr_qty(id,eq){
+            var model_qty_count = parseInt($('#model_qty_count_number[data-model-id="'+id+'"]').val());
+            if(eq == 'add'){
+                model_qty_count += 1; 
+            }
+            if(eq == 'subtract'){
+                if(model_qty_count > 1){
+                    model_qty_count -= 1; 
+                }
+            }
+            $('#model_qty_count_number[data-model-id="'+id+'"]').val(model_qty_count);
+            $("#estimate_models_btn").show();
+        }
+        $(document).on('click','#model_qty_count_minus_btn',function(){
+            var model_id = $(this).attr('data-model-id');
+            incr_decr_qty(model_id,'subtract');
+            
+        })
+        $(document).on('click','#model_qty_count_plus_btn',function(){
+            var model_id = $(this).attr('data-model-id');
+            incr_decr_qty(model_id,'add');
+            
+        })
+        
+        //remove btn
+        $(document).on('click', '#remove_model_btn',function(){
+            var model_id = $(this).attr('data-model-id');
+            $('figure[data-model-id="'+model_id+'"]').remove();
+            estimate_models();
+        })
+
+
+
+
+
+
+
+
+        
+    // })
+    
+    function estimate_models(){
+        var models = [];
+
+        $("#cards figure").map((el,i)=>{
+            var cards_figure_model_id = $(i).attr('data-model-id'); 
+            var originalName = $("#model_name[data-model-id='"+cards_figure_model_id+"']").text();
+            var filename = cards_figure_model_id;
+            var material = $("#model_material[data-model-id='"+cards_figure_model_id+"']").val();
+            var thickness = $("#model_thickness[data-model-id='"+cards_figure_model_id+"']").val();
+            var quantity = parseInt($("#model_qty_count_number[data-model-id='"+cards_figure_model_id+"']").val());
+
+            models.push({
+                originalname: originalName,
+                filename: filename,
+                material: material,
+                thickness: thickness,
+                quantity: quantity
+            })
+
+        })
+        models = JSON.stringify(models);
+
+        $.ajax({
+            type: "POST",
+            url: "https://dxf-estimator.onrender.com/estimate",
+            // url: "http://127.0.0.1:8000/estimate",
+            data: models,
+            dataType:"json",
+            contentType: "application/json",
+            beforeSend: function(response){
+                $("#cards , #models_pricing").addClass('text-center');
+                $("#cards").html('<div class="spinner-border text-success mt-5 mb-5" role="status" style="width:14rem;height:14rem;font-size:9rem"><span class="visually-hidden">Loading...</span></div>');
+                $("#models_pricing").html('<div class="spinner-border text-success mt-5 mb-5" role="status" style="width:6rem;height:6rem;font-size:3rem"><span class="visually-hidden">Loading...</span></div>');
+            },
+            success: function (response) {
+                $("#cards , #models_pricing").removeClass('text-center');
+                $("#cards").html(response["cards"]);
+                $("#models_pricing").html(response["models_pricing"]);
+                $("#overview_total_qty").text(response["total_qty"]);
+                $("#overview_total_discount").text(response["total_discount"]);
+                $("#overview_total_price").text(response["total_price"]);
+                // console.log(response['dxf_data']);
+                preview_dxf(response['dxf_data']);
+            }
+        });
+    }
+</script>
+</html>
