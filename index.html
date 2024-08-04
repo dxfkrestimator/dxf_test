@@ -10,11 +10,10 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <script src="https://oahdev.github.io/dxf_viewer/dxf-parser.js"></script>
-    <!-- <script src="https://oahdev.github.io/dxf_viewer/jquery.js"></script> -->
-    <script src="https://oahdev.github.io/dxf_viewer/three.js"></script>
-    <script src="https://oahdev.github.io/dxf_viewer/OrbitControls.js"></script>
-    <script src="https://oahdev.github.io/dxf_viewer/three-dxf.js"></script>
+    <script src="https://dxfkrestimator.github.io/estimatordocs/dxf-parser.js"></script>
+    <script src="https://dxfkrestimator.github.io/estimatordocs/three.js"></script>
+    <script src="https://dxfkrestimator.github.io/estimatordocs/OrbitControls.js"></script>
+    <script src="https://dxfkrestimator.github.io/estimatordocs/three-dxf.js"></script>
 </head>
 <style>
     body{
@@ -147,106 +146,100 @@
     </div>
 </body>
 <script>
-        function add_scroll(){
-            if($("#cards").css("height").split("px")[0] > 530){
-                $("#cards").css("overflow-y","scroll");
-            }
-            if($("#models_pricing").css("height").split("px")[0] > 330){
-                $("#models_pricing").css("overflow-y","scroll");
-            }
+    function add_scroll(){
+        if($("#cards").css("height").split("px")[0] > 530){
+            $("#cards").css("overflow-y","scroll");
         }
-
-        // $("#model_material , #model_thickness").change(function(){
-        //     $("#estimate_models_btn").show();
-        // })
-        $(document).on("change","#model_material , #model_thickness, #model_qty_count_number",function () { 
-            $("#estimate_models_btn").show();
-        })
-
-
-        //function to preview image
-        function preview_dxf(dxf_data){
-            dxf_data.map((dxf)=> {
-                var font;
-                var dxf_result = dxf.dxfdata;
-                var loader = new THREE.FontLoader();
-                var doc = 'model_dxf_img_'+dxf.filePath;
-                document.getElementById(doc).style.display = 'block';
-                $('#cards figure[data-model-id="'+dxf.filePath+'"] #model_img').hide();
-                loader.load( 'https://oahdev.github.io/dxf_viewer/helvetiker_regular.typeface.json', function ( response ) {
-                    font = response;
-                    cadCanvas = new ThreeDxf.Viewer(dxf_result, document.getElementById(doc), 120, 120, font);
-                });
-            })
+        if($("#models_pricing").css("height").split("px")[0] > 330){
+            $("#models_pricing").css("overflow-y","scroll");
         }
-
-
-        $("#uploadForm").change(function(event) {
-            event.preventDefault()
+    }
     
-            const fileInput = document.getElementById('fileInput');
-            var formData = new FormData();
+    $(document).on("change","#model_material , #model_thickness, #model_qty_count_number",function () { 
+        $("#estimate_models_btn").show();
+    })
     
-            for (var i = 0; i < fileInput.files.length; i++) {
-                formData.append('files', fileInput.files[i]); 
-            }
     
-            $.ajax({
-                type: "POST",
-                url: "https://dxf-estimator.onrender.com/upload",
-                // url: "http://127.0.0.1:8000/upload",
-                data: formData,
-                contentType: false,
-                processData: false,
-                beforeSend: function(){
-                    $("#uploadForm label").hide();
-                    $(".spinner-grow").show();
-                },
-                success: function (response) {
-                    $("#uploadForm").hide();
-                    $('.container').html(response['data']);
-                    // console.log($("#cards").css("height") +'<brbrb>'+ $("#models_pricing").css("height"));
-                    add_scroll();
-                    console.log(response['dxf_data']);
-                    preview_dxf(response['dxf_data']);
-                }
+    //function to preview image
+    function preview_dxf(dxf_data){
+        dxf_data.map((dxf)=> {
+            var font;
+            var dxf_result = dxf.dxfdata;
+            var loader = new THREE.FontLoader();
+            var doc = 'model_dxf_img_'+dxf.filePath;
+            document.getElementById(doc).style.display = 'block';
+            $('#cards figure[data-model-id="'+dxf.filePath+'"] #model_img').hide();
+            loader.load( 'https://dxfkrestimator.github.io/estimatordocs/helvetiker_regular.typeface.json', function ( response ) {
+                font = response;
+                cadCanvas = new ThreeDxf.Viewer(dxf_result, document.getElementById(doc), 120, 120, font);
             });
-        });
-        
-
-
-
-        //function to increase and decrease model qty
-        function incr_decr_qty(id,eq){
-            var model_qty_count = parseInt($('#model_qty_count_number[data-model-id="'+id+'"]').val());
-            if(eq == 'add'){
-                model_qty_count += 1; 
-            }
-            if(eq == 'subtract'){
-                if(model_qty_count > 1){
-                    model_qty_count -= 1; 
-                }
-            }
-            $('#model_qty_count_number[data-model-id="'+id+'"]').val(model_qty_count);
-            $("#estimate_models_btn").show();
+        })
+    }
+    
+    
+    $("#uploadForm").change(function(event) {
+        event.preventDefault()
+    
+        const fileInput = document.getElementById('fileInput');
+        var formData = new FormData();
+    
+        for (var i = 0; i < fileInput.files.length; i++) {
+            formData.append('files', fileInput.files[i]); 
         }
-        $(document).on('click','#model_qty_count_minus_btn',function(){
-            var model_id = $(this).attr('data-model-id');
-            incr_decr_qty(model_id,'subtract');
-            
-        })
-        $(document).on('click','#model_qty_count_plus_btn',function(){
-            var model_id = $(this).attr('data-model-id');
-            incr_decr_qty(model_id,'add');
-            
-        })
+    
+        $.ajax({
+            type: "POST",
+            url: "https://dxfkrestimator.onrender.com/upload",
+            data: formData,
+            contentType: false,
+            processData: false,
+            beforeSend: function(){
+                $("#uploadForm label").hide();
+                $(".spinner-grow").show();
+            },
+            success: function (response) {
+                $("#uploadForm").hide();
+                $('.container').html(response['data']);
+                add_scroll();
+                preview_dxf(response['dxf_data']);
+            }
+        });
+    });
+    
+    
+    
+    
+    //function to increase and decrease model qty
+    function incr_decr_qty(id,eq){
+        var model_qty_count = parseInt($('#model_qty_count_number[data-model-id="'+id+'"]').val());
+        if(eq == 'add'){
+            model_qty_count += 1; 
+        }
+        if(eq == 'subtract'){
+            if(model_qty_count > 1){
+                model_qty_count -= 1; 
+            }
+        }
+        $('#model_qty_count_number[data-model-id="'+id+'"]').val(model_qty_count);
+        $("#estimate_models_btn").show();
+    }
+    $(document).on('click','#model_qty_count_minus_btn',function(){
+        var model_id = $(this).attr('data-model-id');
+        incr_decr_qty(model_id,'subtract');
         
-        //remove btn
-        $(document).on('click', '#remove_model_btn',function(){
-            var model_id = $(this).attr('data-model-id');
-            $('figure[data-model-id="'+model_id+'"]').remove();
-            estimate_models();
-        })
+    })
+    $(document).on('click','#model_qty_count_plus_btn',function(){
+        var model_id = $(this).attr('data-model-id');
+        incr_decr_qty(model_id,'add');
+        
+    })
+    
+    //remove btn
+    $(document).on('click', '#remove_model_btn',function(){
+        var model_id = $(this).attr('data-model-id');
+        $('figure[data-model-id="'+model_id+'"]').remove();
+        estimate_models();
+    })
 
 
 
@@ -256,7 +249,6 @@
 
 
         
-    // })
     
     function estimate_models(){
         var models = [];
@@ -282,8 +274,7 @@
 
         $.ajax({
             type: "POST",
-            url: "https://dxf-estimator.onrender.com/estimate",
-            // url: "http://127.0.0.1:8000/estimate",
+            url: "https://dxfkrestimator.onrender.com/estimate",
             data: models,
             dataType:"json",
             contentType: "application/json",
@@ -299,7 +290,6 @@
                 $("#overview_total_qty").text(response["total_qty"]);
                 $("#overview_total_discount").text(response["total_discount"]);
                 $("#overview_total_price").text(response["total_price"]);
-                // console.log(response['dxf_data']);
                 preview_dxf(response['dxf_data']);
             }
         });
