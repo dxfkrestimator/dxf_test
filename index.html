@@ -18,21 +18,23 @@
 </head>
 
 <body>
-    <form method="POST" id="uploadForm" class="w-50 m-auto p-5 text-center rounded" style="margin-top: 9rem !important;">
-        <label for="fileInput" class="mb-3 btn btn-outline-success">
-            <div class="p-5">
-                <i class="bi bi-cloud-upload fs-1"></i>
-                <h2>Select Files</h2>
-                <p>upload only `.dxf` files</p>
+    <div id="body-container">
+        <form method="POST" id="uploadForm" class="w-50 m-auto p-5 text-center rounded" style="margin-top: 9rem !important;">
+            <label for="fileInput" class="mb-3 btn btn-outline-success">
+                <div class="p-5">
+                    <i class="bi bi-cloud-upload fs-1"></i>
+                    <h2>Select Files</h2>
+                    <p>upload only `.dxf` files</p>
+                </div>
+            </label>
+            <input type="file" id="fileInput" class="mb-3" name="files" accept=".dxf" multiple hidden/>
+            <div class="spinner-grow spinner-grow-sm text-success" role="status" style="width:9rem;height:9rem;display:none;">
+                <span class="visually-hidden">Loading...</span>
             </div>
-        </label>
-        <input type="file" id="fileInput" class="mb-3" name="files" accept=".dxf" multiple hidden/>
-        <div class="spinner-grow spinner-grow-sm text-success" role="status" style="width:9rem;height:9rem;display:none;">
-            <span class="visually-hidden">Loading...</span>
+        </form>
+        <div class="container mt-5 d-flex gap-4 p-0">
+            
         </div>
-    </form>
-    <div class="container mt-5 d-flex gap-4 p-0">
-        
     </div>
 </body>
 <script src="https://dxfkrestimator.github.io/estimatordocs/script.js"></script>
